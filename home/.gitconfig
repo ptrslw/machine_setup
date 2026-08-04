@@ -1,0 +1,13 @@
+[core]
+	# Patterns ignored in EVERY repo on this machine (via core.excludesfile).
+	# Repo-specific ignores still belong in that repo's own .gitignore.
+	# See home/.config/git/ignore.
+	excludesfile = ~/.config/git/ignore
+[init]
+	defaultBranch = main
+[include]
+	# Name/email live in ~/.gitconfig.local, NOT here.
+	# This repo is public and used as a template — committing a real identity
+	# would make every clone start committing as that person.
+	# Create from home/.gitconfig.local.example; doctor checks it exists.
+	path = ~/.gitconfig.local

@@ -1,0 +1,10 @@
+# Real secrets and machine-local overrides — see docs/secrets.md.
+secrets.env
+*.local
+
+# Backups created by `bootstrap.sh link` before replacing a real file with a
+# symlink. May contain old secrets — never commit.
+.dotfiles-backup/
+
+.DS_Store
+.claude/settings.local.json

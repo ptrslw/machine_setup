@@ -1,0 +1,5 @@
+# Global git ignore — applied to every repo via core.excludesfile in .gitconfig.
+# Put patterns here that should never be committed on *any* machine
+# (e.g. editor-local Claude settings). Repo-specific ignores belong in that
+# repo's own .gitignore, not here.
+**/.claude/settings.local.json

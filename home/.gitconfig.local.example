@@ -1,0 +1,13 @@
+# Template for ~/.gitconfig.local — personal git identity.
+#
+# Why a separate file? home/.gitconfig is tracked and public. Name/email are
+# personal, so they stay untracked. Included via [include] in .gitconfig.
+#
+#   cp home/.gitconfig.local.example ~/.gitconfig.local
+#   # then edit name/email
+#
+# Matched by *.local in .gitignore — never commit the filled-in copy.
+
+[user]
+	name = Your Name
+	email = you@example.com

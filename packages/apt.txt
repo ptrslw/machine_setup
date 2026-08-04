@@ -1,0 +1,54 @@
+# apt.txt — Ubuntu packages, one per line.
+# bootstrap.sh strips comments/blanks, then:
+#   sudo apt-get update && sudo apt-get install -y <packages>
+#
+# Add a tool: append a line. Retire a tool: delete its line.
+# WezTerm and Docker Engine are installed by installers/*.sh (not apt names here).
+
+# Build essentials
+curl
+wget
+build-essential
+gcc
+g++
+make
+software-properties-common
+apt-transport-https
+ca-certificates
+gnupg
+
+# Core CLI
+zsh
+git
+tmux
+neovim
+direnv
+gh
+jq
+unzip
+zip
+bc
+lsof
+strace
+htop
+tree
+ripgrep
+fzf
+
+# Python system baseline; uv manages real interpreters and project venvs.
+# No bare `pip` workflow — do not add python3-pip for day-to-day work.
+python3.12
+python3.12-venv
+python3.12-dev
+
+# C++
+cmake
+clang
+clang-format
+clang-tidy
+
+# Fonts
+fonts-jetbrains-mono
+
+# Used by shell/functions.linux.sh (CPU temps)
+lm-sensors

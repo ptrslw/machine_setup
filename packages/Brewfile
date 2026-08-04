@@ -1,0 +1,47 @@
+# Brewfile — macOS *core* packages. Installed by `bootstrap.sh packages`.
+# Personal / optional casks and formulas: packages/Brewfile.optional
+#   brew bundle --file packages/Brewfile.optional
+#
+# Add a core tool: append here, re-run bootstrap (or brew bundle).
+# Retire a tool: delete its line, then
+#   brew bundle cleanup --file packages/Brewfile
+
+# Core CLI
+brew "git"
+brew "tmux"
+brew "neovim"
+brew "direnv"
+brew "gh"
+brew "tree"
+brew "htop"
+brew "jq"
+brew "ripgrep"
+brew "fzf"
+
+# Python — uv owns interpreter versions and per-project venvs (docs/workflow.md)
+brew "uv"
+brew "ruff"
+brew "mypy"
+brew "pre-commit"
+
+# C++
+brew "cmake"
+brew "googletest"
+
+# Node — needed for Claude Code and other npm-distributed CLIs
+brew "node"
+
+# Containers
+brew "colima"
+brew "docker"
+brew "docker-compose"
+
+# Fonts
+cask "font-jetbrains-mono"
+
+# GUI apps (workflow core)
+cask "wezterm"
+cask "visual-studio-code"
+cask "cursor"
+cask "clion"            # C++ IDE
+cask "sublime-merge"    # Git GUI

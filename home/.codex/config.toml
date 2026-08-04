@@ -1,0 +1,30 @@
+# Codex CLI config. Symlinked: machine_setup/home/.codex/config.toml → ~/.codex/config.toml
+#
+# Claude Code is the primary agent in this setup. Codex is exploratory.
+# Secrets stay in ~/.secrets.env (DEEPSEEK_API_KEY, OPENAI_API_KEY) — never here.
+# Docs: docs/agents.md
+
+# Default local OSS provider when running: codex --oss
+oss_provider = "ollama"
+
+# --- Providers ---------------------------------------------------------------
+# Built-in IDs openai / ollama / lmstudio are reserved — use custom names below.
+
+[model_providers.deepseek]
+name = "DeepSeek"
+base_url = "https://api.deepseek.com/v1"
+env_key = "DEEPSEEK_API_KEY"
+wire_api = "chat"
+
+[model_providers.local_ollama]
+name = "Ollama (local)"
+base_url = "http://localhost:11434/v1"
+
+# --- Defaults (uncomment one path) -------------------------------------------
+# Remote DeepSeek (needs DEEPSEEK_API_KEY in ~/.secrets.env):
+# model = "deepseek-chat"
+# model_provider = "deepseek"
+
+# Local Ollama (needs `ollama serve` + `ollama pull qwen2.5-coder`):
+# model = "qwen2.5-coder"
+# model_provider = "local_ollama"

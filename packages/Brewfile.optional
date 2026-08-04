@@ -1,0 +1,15 @@
+# Brewfile.optional — personal / nice-to-have macOS packages.
+# NOT installed by `bootstrap.sh all`. Install explicitly:
+#   brew bundle --file packages/Brewfile.optional
+#
+# Keep workflow-critical tools in packages/Brewfile instead.
+
+brew "postgresql@16"
+brew "midnight-commander"
+brew "poppler"
+brew "portaudio"
+brew "libiconv"
+brew "unbound"
+
+cask "tailscale-app"
+cask "brave-browser"
