@@ -19,6 +19,10 @@ repos:
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
+        # shellcheck has no zsh support. Left in, it parses these as bash and
+        # reports the zsh-only syntax they exist to hold — e.g. SC2206 on
+        # `fpath=(...)`. Excluded rather than suppressed line by line.
+        exclude: ^home/\.(zshrc|zprofile)$
 
   - repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.10.0-1

@@ -1,0 +1,14 @@
+# shellcheck configuration for this repo.
+#
+# Every installer sources lib/common.sh and carries a `# shellcheck source=`
+# directive naming it. Without external-sources those directives are ignored
+# and each one reports SC1091 ("not following"). Turning it on makes shellcheck
+# actually read the helper, so it can also verify the callers use it correctly.
+external-sources=true
+
+# Those directives are written relative to the script that carries them
+# ("../lib/common.sh"), but shellcheck resolves relative paths against its own
+# working directory — the repo root under pre-commit. SCRIPTDIR makes it
+# resolve against the sourcing script's directory instead, so the same
+# directive works whether CI, pre-commit, or a shell in installers/ runs it.
+source-path=SCRIPTDIR
