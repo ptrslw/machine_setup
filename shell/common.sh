@@ -32,6 +32,7 @@ export LS_COLORS="${LS_COLORS:-}"              # GNU ls (Linux); empty → defau
 # See docs/secrets.md and shell/secrets.env.example.
 if [ -f "$HOME/.secrets.env" ]; then
     set -a
+    # shellcheck disable=SC1091  # untracked, per-user; absent in a fresh clone
     . "$HOME/.secrets.env"
     set +a
 fi
@@ -43,7 +44,9 @@ fi
 # Prefer ~/.shell.local (works for bash and zsh). ~/.zshrc.local still works
 # as a fallback for older machines.
 if [ -f "$HOME/.shell.local" ]; then
+    # shellcheck disable=SC1091  # untracked, per-user; absent in a fresh clone
     . "$HOME/.shell.local"
 elif [ -f "$HOME/.zshrc.local" ]; then
+    # shellcheck disable=SC1091  # untracked, per-user; absent in a fresh clone
     . "$HOME/.zshrc.local"
 fi

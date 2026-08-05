@@ -183,6 +183,7 @@ run_optional() {
     bash "$script"
 }
 
+# shellcheck disable=SC2088  # tildes in messages are display text, not paths
 run_doctor() {
     header "Doctor — machine configuration report"
 
@@ -218,9 +219,9 @@ run_doctor() {
         fi
     done
     if curl -sf --max-time 1 http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-        printf "    ${GREEN}✓${NC} ollama daemon reachable on :11434\n"
+        printf '    %b✓%b ollama daemon reachable on :11434\n' "$GREEN" "$NC"
     elif is_cmd ollama; then
-        printf "    ${DIM}  ollama installed but daemon not responding on :11434${NC}\n"
+        printf '    %b  ollama installed but daemon not responding on :11434%b\n' "$DIM" "$NC"
     fi
     echo
 
@@ -279,17 +280,17 @@ run_doctor() {
             printf "    ${GREEN}✓${NC} ROS 2 %s\n" "$(basename "$d")"
         done
     else
-        printf "    ${DIM}✗ ROS 2 not installed  (./bootstrap.sh ros2)${NC}\n"
+        printf '    %b✗ ROS 2 not installed  (./bootstrap.sh ros2)%b\n' "$DIM" "$NC"
     fi
     if is_cmd gz; then
-        printf "    ${GREEN}✓${NC} Gazebo (gz)\n"
+        printf '    %b✓%b Gazebo (gz)\n' "$GREEN" "$NC"
     else
-        printf "    ${DIM}✗ Gazebo not installed  (./bootstrap.sh gazebo)${NC}\n"
+        printf '    %b✗ Gazebo not installed  (./bootstrap.sh gazebo)%b\n' "$DIM" "$NC"
     fi
     if [[ -d "$HOME/.local/share/ov/pkg" ]]; then
-        printf "    ${GREEN}✓${NC} Omniverse / Isaac under ~/.local/share/ov/pkg\n"
+        printf '    %b✓%b Omniverse / Isaac under ~/.local/share/ov/pkg\n' "$GREEN" "$NC"
     else
-        printf "    ${DIM}✗ Isaac Sim not detected  (./bootstrap.sh isaac)${NC}\n"
+        printf '    %b✗ Isaac Sim not detected  (./bootstrap.sh isaac)%b\n' "$DIM" "$NC"
     fi
     echo
 }

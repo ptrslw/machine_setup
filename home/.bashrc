@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # .bashrc — bash INTERACTIVE shell (Linux counterpart to .zshrc).
 #
 # Same rule as .zshrc: shell-specific glue only. Portable code lives in

@@ -10,8 +10,8 @@ get-sys-info() {
     local cyan='\033[36m' green='\033[32m' yellow='\033[33m' magenta='\033[35m'
     local label_w=20
 
-    printf "\n${bold}  System Information${reset}\n"
-    printf "${dim}  ──────────────────────────────────────${reset}\n"
+    printf '\n%b  System Information%b\n' "$bold" "$reset"
+    printf '%b  ──────────────────────────────────────%b\n' "$dim" "$reset"
 
     local os_pretty
     os_pretty=$(sw_vers -productName 2>/dev/null)" "$(sw_vers -productVersion 2>/dev/null)
@@ -107,7 +107,7 @@ get-status() {
     }
 
     # "Used" ≈ active + wired + compressed pages (matches Activity Monitor).
-    printf "\n${bold}${cyan} RAM${reset}  "
+    printf '\n%b%b RAM%b  ' "$bold" "$cyan" "$reset"
     local mem_bytes mem_total_gib page_size pages_active pages_wired pages_compressed
     mem_bytes=$(sysctl -n hw.memsize 2>/dev/null)
     mem_total_gib=$(awk "BEGIN {printf \"%.1f\", $mem_bytes/1024/1024/1024}")
@@ -116,14 +116,15 @@ get-status() {
     pages_wired=$(vm_stat | awk '/Pages wired/{gsub(/\./,"",$4); print $4}')
     pages_compressed=$(vm_stat | awk '/Pages occupied by compressor/{gsub(/\./,"",$5); print $5}')
     local used_bytes=$(( (pages_active + pages_wired + pages_compressed) * page_size ))
-    local used_gib=$(awk "BEGIN {printf \"%.1f\", $used_bytes/1024/1024/1024}")
-    local ram_pct=$(awk "BEGIN {printf \"%.0f\", $used_bytes/$mem_bytes*100}")
+    local used_gib ram_pct
+    used_gib=$(awk "BEGIN {printf \"%.1f\", $used_bytes/1024/1024/1024}")
+    ram_pct=$(awk "BEGIN {printf \"%.0f\", $used_bytes/$mem_bytes*100}")
     printf "%s GiB / %s GiB (%s%%)\n" "$used_gib" "$mem_total_gib" "$ram_pct"
     printf "       "; _bar "$ram_pct"; echo
 
     # Every mounted /dev/* filesystem.
-    printf "\n${bold}${green} SSD${reset}\n"
-    df -h | awk 'NR>1 && /^\/dev\//' | while read -r dev size used avail pct _rest; do
+    printf '\n%b%b SSD%b\n' "$bold" "$green" "$reset"
+    df -h | awk 'NR>1 && /^\/dev\//' | while read -r dev size used _avail pct _rest; do
         local p=${pct%\%}
         printf "  %-18s %6s / %6s  " "$dev" "$used" "$size"
         _bar "$p"
@@ -131,7 +132,7 @@ get-status() {
     done
 
     # Thread count + 1/5/15-minute load average.
-    printf "\n${bold}${yellow} CPU${reset}  "
+    printf '\n%b%b CPU%b  ' "$bold" "$yellow" "$reset"
     local cpu_model ncpu load
     cpu_model=$(sysctl -n machdep.cpu.brand_string 2>/dev/null)
     ncpu=$(sysctl -n hw.logicalcpu 2>/dev/null)
@@ -139,7 +140,7 @@ get-status() {
     printf "%s threads  load %s\n" "$ncpu" "$load"
 
     # Name only — macOS does not expose a simple utilization counter here.
-    printf "\n${bold}${magenta} GPU${reset}  "
+    printf '\n%b%b GPU%b  ' "$bold" "$magenta" "$reset"
     local gpu_name
     gpu_name=$(system_profiler SPDisplaysDataType 2>/dev/null \
         | awk -F': ' '/Chipset Model|Chip Model/{print $2; exit}')
@@ -157,8 +158,8 @@ get-versions() {
     local cyan='\033[36m' green='\033[32m' yellow='\033[33m' magenta='\033[35m'
     local label_w=22
 
-    printf "\n${bold}  Dev tools${reset}\n"
-    printf "${dim}  ──────────────────────────────────────${reset}\n"
+    printf '\n%b  Dev tools%b\n' "$bold" "$reset"
+    printf '%b  ──────────────────────────────────────%b\n' "$dim" "$reset"
 
     if xcode-select -p &>/dev/null; then
         local xcode_ver
@@ -275,7 +276,7 @@ get-docker() {
             --format '{{.Names}}\t{{.Image}}\t{{.State}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null)
 
         if [[ "$has_containers" == false ]]; then
-            printf "  ${dim}  (no containers)${reset}\n"
+            printf '  %b  (no containers)%b\n' "$dim" "$reset"
         fi
 
         local images_count images_size containers_count volumes_count
@@ -294,8 +295,8 @@ get-docker() {
             "${containers_count:-0}" "${volumes_count:-0}"
     }
 
-    printf "\n${bold}  Docker Status${reset}\n"
-    printf "${dim}  ──────────────────────────────────────${reset}\n"
+    printf '\n%b  Docker Status%b\n' "$bold" "$reset"
+    printf '%b  ──────────────────────────────────────%b\n' "$dim" "$reset"
 
     _show_containers "Local Docker" ""
 
@@ -309,7 +310,7 @@ get-process-info() {
 
     printf "\n${bold}  Top %s Processes by Memory${reset}\n" "$n"
     printf "${dim}  %-24s %10s %7s${reset}\n" "PROCESS" "RAM" "CPU%"
-    printf "${dim}  ────────────────────────────────────────────${reset}\n"
+    printf '%b  ────────────────────────────────────────────%b\n' "$dim" "$reset"
 
     ps -Amcr -o rss=,pcpu=,comm= \
         | sort -rnk1 \

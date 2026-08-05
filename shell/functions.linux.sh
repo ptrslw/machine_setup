@@ -20,13 +20,13 @@ ros2-env() {
 
     # Prefer the shell-native setup script when present.
     if [[ -n "${ZSH_VERSION:-}" && -f "${prefix}/setup.zsh" ]]; then
-        # shellcheck disable=SC1090
+        # shellcheck disable=SC1090,SC1091  # exists only after ROS 2 install
         source "${prefix}/setup.zsh"
     elif [[ -f "${prefix}/setup.bash" ]]; then
-        # shellcheck disable=SC1090
+        # shellcheck disable=SC1090,SC1091  # exists only after ROS 2 install
         source "${prefix}/setup.bash"
     elif [[ -f "${prefix}/setup.sh" ]]; then
-        # shellcheck disable=SC1090
+        # shellcheck disable=SC1090,SC1091  # exists only after ROS 2 install
         source "${prefix}/setup.sh"
     else
         echo "ros2-env: no setup script under ${prefix}" >&2
@@ -55,16 +55,16 @@ get-status() {
         printf "${color}%s${reset}" "$bar"
     }
 
-    printf "\n${bold}${cyan} RAM${reset}  "
+    printf '\n%b%b RAM%b  ' "$bold" "$cyan" "$reset"
     free -h | awk '/^Mem:/ {printf "%s / %s (%.1f%%)\n", $3, $2, $3/$2*100}'
     local ram_pct
     ram_pct=$(free | awk '/^Mem:/ {printf "%.0f", $3/$2*100}')
     printf "       "; _bar "$ram_pct"; echo
 
     # Real block devices only (skip tmpfs / devtmpfs / efivarfs).
-    printf "\n${bold}${green} SSD${reset}\n"
+    printf '\n%b%b SSD%b\n' "$bold" "$green" "$reset"
     df -h --output=source,size,used,avail,pcent -x tmpfs -x devtmpfs -x efivarfs 2>/dev/null \
-        | grep -E '^/dev/' | while read -r dev size used avail pct; do
+        | grep -E '^/dev/' | while read -r dev size used _avail pct; do
         local p=${pct%\%}
         printf "  %-18s %6s / %6s  " "$dev" "$used" "$size"
         _bar "$p"
@@ -72,7 +72,7 @@ get-status() {
     done
 
     # Prefer lm-sensors; fall back to /sys/class/thermal.
-    printf "\n${bold}${yellow} CPU${reset}  "
+    printf '\n%b%b CPU%b  ' "$bold" "$yellow" "$reset"
     if command -v sensors &>/dev/null; then
         local temps min max count
         temps=$(sensors 2>/dev/null | grep -oP 'Core \d+:\s+\+\K[0-9.]+' | sort -rn)
@@ -99,7 +99,7 @@ get-status() {
     fi
 
     # NVIDIA (nvidia-smi) → AMD (rocm-smi) → give up.
-    printf "\n${bold}${magenta} GPU${reset}  "
+    printf '\n%b%b GPU%b  ' "$bold" "$magenta" "$reset"
     if command -v nvidia-smi &>/dev/null; then
         nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu \
             --format=csv,noheader,nounits | while IFS=',' read -r name util mem_used mem_total temp; do
@@ -124,8 +124,8 @@ get-versions() {
     local cyan='\033[36m' green='\033[32m' yellow='\033[33m' magenta='\033[35m'
     local label_w=22
 
-    printf "\n${bold}  Dev tools${reset}\n"
-    printf "${dim}  ──────────────────────────────────────${reset}\n"
+    printf '\n%b  Dev tools%b\n' "$bold" "$reset"
+    printf '%b  ──────────────────────────────────────%b\n' "$dim" "$reset"
 
     if command -v nvidia-smi &>/dev/null; then
         local driver gpu
@@ -143,7 +143,12 @@ get-versions() {
     # ROS 2 if a workspace is sourced, or /opt/ros has a distro installed.
     local _ros_distro="${ROS_DISTRO:-}"
     if [[ -z "$_ros_distro" && -d /opt/ros ]]; then
-        _ros_distro=$(ls /opt/ros/ 2>/dev/null | head -1)
+        local _d
+        for _d in /opt/ros/*/; do
+            [[ -d "$_d" ]] || continue
+            _ros_distro=$(basename "$_d")
+            break
+        done
     fi
     if [[ -n "$_ros_distro" ]]; then
         local ros_pkg_ver
@@ -182,11 +187,12 @@ get-sys-info() {
     local cyan='\033[36m' green='\033[32m' yellow='\033[33m' magenta='\033[35m'
     local label_w=20
 
-    printf "\n${bold}  System Information${reset}\n"
-    printf "${dim}  ──────────────────────────────────────${reset}\n"
+    printf '\n%b  System Information%b\n' "$bold" "$reset"
+    printf '%b  ──────────────────────────────────────%b\n' "$dim" "$reset"
 
     local os_pretty
     if [[ -f /etc/os-release ]]; then
+        # shellcheck disable=SC1091  # system file, not shipped by this repo
         os_pretty=$(. /etc/os-release && echo "$PRETTY_NAME")
     fi
     printf "  ${cyan}%-${label_w}s${reset} %s\n" "OS" "${os_pretty:-Unknown}"
@@ -236,7 +242,7 @@ get-sys-info() {
         printf "\n  ${magenta}%-${label_w}s${reset} %s\n" "GPU" "${gpu_name:-AMD GPU (rocm-smi)}"
     else
         local gpu_name
-        gpu_name=$(find /sys/class/drm/*/device -name 'label' 2>/dev/null | xargs cat 2>/dev/null | head -1)
+        gpu_name=$(find /sys/class/drm/*/device -name 'label' -exec cat {} + 2>/dev/null | head -1)
         [[ -z "$gpu_name" ]] && gpu_name=$(lspci 2>/dev/null | grep -iE 'VGA|3D|Display' | head -1 | sed 's/.*: //')
         printf "\n  ${magenta}%-${label_w}s${reset} %s\n" "GPU" "${gpu_name:-Not detected}"
     fi
@@ -345,7 +351,7 @@ get-docker() {
             --format '{{.Names}}\t{{.Image}}\t{{.State}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null)
 
         if [[ "$has_containers" == false ]]; then
-            printf "  ${dim}  (no containers)${reset}\n"
+            printf '  %b  (no containers)%b\n' "$dim" "$reset"
         fi
 
         local images_count images_size containers_count volumes_count
@@ -364,8 +370,8 @@ get-docker() {
             "${containers_count:-0}" "${volumes_count:-0}"
     }
 
-    printf "\n${bold}  Docker Status${reset}\n"
-    printf "${dim}  ──────────────────────────────────────${reset}\n"
+    printf '\n%b  Docker Status%b\n' "$bold" "$reset"
+    printf '%b  ──────────────────────────────────────%b\n' "$dim" "$reset"
 
     _show_containers "Local Docker" ""
 
@@ -379,7 +385,7 @@ get-process-info() {
 
     printf "\n${bold}  Top %s Processes by Memory${reset}\n" "$n"
     printf "${dim}  %-24s %10s %7s${reset}\n" "PROCESS" "RAM" "CPU%"
-    printf "${dim}  ────────────────────────────────────────────${reset}\n"
+    printf '%b  ────────────────────────────────────────────%b\n' "$dim" "$reset"
 
     ps -eo rss=,%cpu=,comm= --no-headers --sort=-rss \
         | head -n "$n" \

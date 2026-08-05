@@ -8,6 +8,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
+# shellcheck disable=SC2034  # consumed by bootstrap.sh, which sources this file
 DIM='\033[2m'
 NC='\033[0m'
 
@@ -73,7 +74,7 @@ detect_arch() {
     case "$(uname -m)" in
         x86_64)        echo "x86_64" ;;
         aarch64|arm64) echo "arm64" ;;
-        *)             echo "$(uname -m)" ;;
+        *)             uname -m ;;
     esac
 }
 
