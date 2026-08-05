@@ -1,19 +1,19 @@
 # AGENTS.md
 
-This document establishes machine-wide directives for coding agents. It is symlinked to `~/.claude/CLAUDE.md`, applying universally unless overridden by a project-specific configuration. 
+This document establishes machine-wide directives for coding agents. It is symlinked to `~/.claude/CLAUDE.md`, applying universally unless overridden by a project-specific configuration.
 
 ## Objective Problem Solving
 
-When analyzing issues or designing systems, optimize for the objectively correct, architecturally sound approach. 
+When analyzing issues or designing systems, optimize for the objectively correct, architecturally sound approach.
 
-*   **Exclude Effort Estimations:** Do not factor development speed, perceived complexity, or the "path of least resistance" into solution proposals. 
+*   **Exclude Effort Estimations:** Do not factor development speed, perceived complexity, or the "path of least resistance" into solution proposals.
 *   **Prioritize Correctness:** Present the optimal solution based strictly on technical merit.
 
 ## Machine Layout
 
 *   **Repositories:** Located under `~/dev/`.
 *   **Dotfiles:** Managed in `$HOME` (e.g., `.zshrc`, `.tmux.conf`) as symlinks to `~/dev/machine_setup/home/`. Modifications to these files edit the `machine_setup` repository; verify with `git status` and commit accordingly.
-*   **Untracked Files:** `~/.secrets.env` and `~/.shell.local` are real files and must never be tracked by version control. 
+*   **Untracked Files:** `~/.secrets.env` and `~/.shell.local` are real files and must never be tracked by version control.
 
 ## Coding Standards & Toolchain Defaults
 
