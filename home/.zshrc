@@ -33,4 +33,8 @@ compinit
 # Shared layer ------------------------------------------------------------
 # Aliases, cc wrapper, get-status/get-versions/…, secrets, ~/.shell.local.
 # See shell/common.sh for load order.
+# MACHINE_SETUP_DIR is exported by .zprofile, but .zprofile only runs for LOGIN
+# shells — nested `zsh` and most terminal emulators start a non-login shell that
+# reads .zshrc alone. Default it here so the source below resolves either way.
+: "${MACHINE_SETUP_DIR:=$HOME/dev/machine_setup}"
 . "$MACHINE_SETUP_DIR/shell/common.sh"

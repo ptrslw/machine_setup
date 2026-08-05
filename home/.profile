@@ -14,3 +14,11 @@ export PATH="$HOME/.local/bin:$PATH"
 # Neovim is the CLI editor ($EDITOR for git, crontab, etc.). Config: ~/.config/nvim
 export EDITOR="nvim"
 export LANG="en_US.UTF-8"
+
+# Bash reads .profile for LOGIN shells and .bashrc for interactive non-login
+# shells — never both. Without this hook a login bash (tmux pane, ssh session)
+# gets no prompt, aliases, or direnv. zsh needs no equivalent: it reads
+# .zprofile and .zshrc for a login shell.
+if [ -n "${BASH_VERSION:-}" ] && [ -f "$HOME/.bashrc" ]; then
+    . "$HOME/.bashrc"
+fi
