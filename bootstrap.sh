@@ -298,7 +298,7 @@ run_doctor() {
 
         for agent in codex gemini; do
             if is_cmd "$agent"; then
-                printf "      ${GREEN}✓${NC} %-12s installed — './bootstrap.sh skills' wires the pack in\n" "$agent"
+                printf "      ${DIM}· %-12s present — pack install not verified by doctor${NC}\n" "$agent"
             else
                 printf "      ${DIM}· %-12s not installed${NC}\n" "$agent"
             fi

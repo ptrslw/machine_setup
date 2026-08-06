@@ -101,8 +101,10 @@ checklists are incomplete without them. For an agent none of this covers,
 `npx skills add <owner>/<repo>` handles 70+ others.
 
 `./bootstrap.sh doctor` reports both layers: which declared Claude plugins are
-installed, and for each pack whether Claude has it declared, which other
-agents are present, and whether the cache is at the pinned SHA.
+installed, and for each pack whether Claude has it declared, whether the
+cache is at the pinned SHA, and whether Codex/Gemini are merely present on
+PATH (doctor does not claim those packs are wired — their CLIs have no
+reliable query yet).
 
 The one pack installed today, `addyosmani/agent-skills`, supplies 24 lifecycle
 skills (spec-driven development, TDD, incremental implementation, code review,
