@@ -76,10 +76,16 @@ install_codex() {
         info "[DRY RUN] Codex: would run 'codex plugin marketplace add $repo'"
         return 0
     fi
-    if codex plugin marketplace add "$repo" >/dev/null 2>&1; then
+    local out rc
+    set +e
+    out="$(codex plugin marketplace add "$repo" 2>&1)"
+    rc=$?
+    set -e
+    if [[ "$rc" -eq 0 ]]; then
         success "Codex: marketplace $repo added/updated"
     else
-        warn "Codex: 'codex plugin marketplace add $repo' failed — run it by hand to see why"
+        warn "Codex: 'codex plugin marketplace add $repo' failed (exit $rc)"
+        [[ -n "$out" ]] && printf '%s\n' "$out" >&2
     fi
 }
 
@@ -90,10 +96,16 @@ install_gemini() {
         info "[DRY RUN] Gemini: would run 'gemini skills install https://github.com/$repo.git --path skills'"
         return 0
     fi
-    if gemini skills install "https://github.com/$repo.git" --path skills >/dev/null 2>&1; then
+    local out rc
+    set +e
+    out="$(gemini skills install "https://github.com/$repo.git" --path skills 2>&1)"
+    rc=$?
+    set -e
+    if [[ "$rc" -eq 0 ]]; then
         success "Gemini CLI: skills installed from $repo"
     else
-        warn "Gemini CLI: 'gemini skills install https://github.com/$repo.git --path skills' failed"
+        warn "Gemini CLI: 'gemini skills install https://github.com/$repo.git --path skills' failed (exit $rc)"
+        [[ -n "$out" ]] && printf '%s\n' "$out" >&2
     fi
 }
 
