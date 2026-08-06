@@ -152,9 +152,13 @@ run_packages() {
 
     # Core installers only (installers/*.sh). Opt-in agents/robotics live under
     # installers/optional/ and are invoked by named bootstrap commands.
+    # Claude Code + plugins and skill packs have dedicated steps (claude/skills);
+    # they must not run here — Claude is not on PATH yet during packages.
     for installer in "$SCRIPT_DIR"/installers/*.sh; do
         [[ -f "$installer" ]] || continue
-        [[ "$(basename "$installer")" == "claude-code.sh" ]] && continue
+        case "$(basename "$installer")" in
+            claude-code.sh|claude-plugins.sh|agent-skills.sh) continue ;;
+        esac
         if [[ "$DRY_RUN" == "true" ]]; then
             info "[DRY RUN] would run: $installer"
         else
