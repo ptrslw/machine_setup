@@ -27,6 +27,21 @@ if ! is_cmd jq; then
     exit 1
 fi
 
+# Run a claude subcommand; on failure print captured stderr and return 1.
+claude_try() {
+    local out rc
+    set +e
+    out="$(claude "$@" 2>&1)"
+    rc=$?
+    set -e
+    if [[ "$rc" -ne 0 ]]; then
+        error "claude $* failed (exit $rc)"
+        [[ -n "$out" ]] && printf '%s\n' "$out" >&2
+        return 1
+    fi
+    return 0
+}
+
 # --- Marketplaces -----------------------------------------------------------
 # Only github-backed marketplaces are declared here; `claude plugin marketplace
 # add` takes the owner/repo shorthand directly.
@@ -40,10 +55,10 @@ while IFS=$'\t' read -r name repo; do
         continue
     fi
     if jq -e --arg n "$name" 'any(.[]; .name == $n)' <<<"$known" >/dev/null; then
-        claude plugin marketplace update "$name" >/dev/null
+        claude_try plugin marketplace update "$name"
         success "marketplace $name up to date"
     else
-        claude plugin marketplace add "$repo" --scope user >/dev/null
+        claude_try plugin marketplace add "$repo" --scope user
         success "marketplace $name added ($repo)"
     fi
 done < <(jq -r '
@@ -65,10 +80,10 @@ while IFS= read -r id; do
         continue
     fi
     if jq -e --arg id "$id" 'any(.[]; .id == $id and .scope == "user")' <<<"$installed" >/dev/null; then
-        claude plugin update "$id" >/dev/null 2>&1 || true
-        success "plugin $id already installed"
+        claude_try plugin update "$id"
+        success "plugin $id updated"
     else
-        claude plugin install "$id" --scope user >/dev/null
+        claude_try plugin install "$id" --scope user
         success "plugin $id installed"
     fi
 done < <(jq -r '
