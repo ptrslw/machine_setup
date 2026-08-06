@@ -7,7 +7,8 @@
 # This file is the declaration of intent; installers/agent-skills.sh translates
 # it into whatever mechanism each installed agent actually supports:
 #
-#   Claude Code   marketplace plugin        user-global  (claude/settings.json)
+#   Claude Code   marketplace plugin        user-global  (claude/settings.json;
+#                 must list the same owner/repo or `bootstrap.sh skills` fails)
 #   Codex         codex plugin marketplace  user-global  (repo only; CLI has no pin)
 #   Gemini CLI    gemini skills install     user-global  (repo only; CLI has no pin)
 #   Cursor        .cursor/skills/           per-project  (agent-skills-sync @ SHA)
@@ -15,6 +16,7 @@
 #
 # The local cache (~/.cache/agent-skills/) is always at the pinned SHA. Claude /
 # Codex / Gemini marketplace installs follow those tools' own resolution until
-# they grow pin support — see docs/agents.md.
+# they grow pin support — see docs/agents.md. Claude still requires a matching
+# entry in claude/settings.json; the skills step fails on drift.
 
 addyosmani/agent-skills@f03b4a84b08b76608bbab3133e56e49e361f230b

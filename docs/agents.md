@@ -78,7 +78,7 @@ translates that list into whatever each installed agent supports.
 
 | Agent | Mechanism | Scope | Pin |
 |---|---|---|---|
-| Claude Code | marketplace plugin, declared in `claude/settings.json` | user-global | marketplace floats until Claude grows pin support |
+| Claude Code | marketplace plugin, declared in `claude/settings.json` | user-global | marketplace floats until Claude grows pin support; skills step **fails** if settings omit the pack |
 | Codex (≥ 0.122) | `codex plugin marketplace add <repo>` | user-global | CLI has no pin |
 | Gemini CLI | `gemini skills install <url> --path skills` | user-global | CLI has no pin |
 | Cursor | `.cursor/skills/` | **per-project** | local cache @ SHA |

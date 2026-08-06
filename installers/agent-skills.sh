@@ -32,13 +32,13 @@ if [[ ! -f "$MANIFEST" ]]; then
 fi
 
 # Claude Code: settings.json holds the enable switch, so the manifest is only
-# honored there if the two agree. Warn loudly rather than rewriting a tracked
-# file during provisioning.
+# honored there if the two agree. Mismatch is a hard failure — warn-and-continue
+# let the "single declaration of intent" silently drift.
 check_claude() {
     local repo="$1"
     if ! is_cmd jq; then
-        warn "jq not found — skipping the Claude Code declaration check"
-        return 0
+        error "jq not found — cannot verify Claude Code declaration for $repo"
+        return 1
     fi
     local market
     market="$(jq -r --arg repo "$repo" '
@@ -49,8 +49,8 @@ check_claude() {
     ' "$SETTINGS" | head -1)"
 
     if [[ -z "$market" ]]; then
-        warn "Claude Code: $repo is not in extraKnownMarketplaces of claude/settings.json — add it, then './bootstrap.sh claude'"
-        return 0
+        error "Claude Code: $repo is not in extraKnownMarketplaces of claude/settings.json — add it, then './bootstrap.sh claude'"
+        return 1
     fi
     if jq -e --arg m "@$market" '
         (.enabledPlugins // {})
@@ -58,9 +58,10 @@ check_claude() {
         | any(.[]; (.key | endswith($m)) and .value != false)
     ' "$SETTINGS" >/dev/null; then
         success "Claude Code: declared via marketplace $market (installed by 'bootstrap.sh claude')"
-    else
-        warn "Claude Code: marketplace $market is declared but no plugin from it is in enabledPlugins"
+        return 0
     fi
+    error "Claude Code: marketplace $market is declared but no plugin from it is in enabledPlugins"
+    return 1
 }
 
 # Codex >= 0.122 reads the pack's root skills/ via its own plugin marketplace.
@@ -128,7 +129,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     dest="$(agent_skill_cache_path "$repo" "$CACHE_DIR")"
 
     info "pack: $repo@$sha"
-    check_claude "$repo"
+    check_claude "$repo" || failed+=("$repo@claude")
     install_codex "$repo"
     install_gemini "$repo"
     agent_skill_ensure_cache "$dest" "$repo" "$sha" || failed+=("$repo@$sha")
