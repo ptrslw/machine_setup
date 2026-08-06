@@ -6,9 +6,10 @@
 # Commands:
 #   link        Symlink home/ into $HOME (backs up existing files)
 #   packages    Homebrew (macOS) or apt (Ubuntu), then installers/
-#   claude      Claude Code CLI (needs Node from `packages`)
+#   claude      Claude Code CLI + tracked plugins (needs Node from `packages`)
+#   skills      Skill packs from packages/agent-skills.txt into every agent
 #   doctor      Read-only configuration report
-#   all         link → packages → claude → doctor (default)
+#   all         link → packages → claude → skills → doctor (default)
 #
 # Opt-in agents (exploratory; Claude Code remains primary — see docs/agents.md):
 #   codex       OpenAI Codex CLI
@@ -23,7 +24,7 @@
 # Options:
 #   --dry-run       Print actions without applying them
 #   --list          List the steps that make up `all` and exit
-#   --only <step>   Run a single step from `all` (link|packages|claude|doctor).
+#   --only <step>   Run one step of `all` (link|packages|claude|skills|doctor).
 #                   Overrides the command; equivalent to naming that step.
 #   -h, --help      Show this help
 #
@@ -35,7 +36,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
-STEPS=(link packages claude doctor)
+STEPS=(link packages claude skills doctor)
 
 # --- Argument parsing -------------------------------------------------------
 COMMAND="all"
@@ -51,13 +52,13 @@ while [[ $# -gt 0 ]]; do
         --only)
             ONLY_STEP="${2:-}"
             if [[ -z "$ONLY_STEP" ]]; then
-                error "--only requires a step name (link|packages|claude|doctor)"
+                error "--only requires a step name (link|packages|claude|skills|doctor)"
                 exit 1
             fi
             shift 2
             ;;
         -h|--help)
-            sed -n '2,31p' "$0" | sed -E 's/^# ?//'
+            sed -n '2,33p' "$0" | sed -E 's/^# ?//'
             exit 0
             ;;
         -*) error "Unknown option: $1"; exit 1 ;;
@@ -164,7 +165,20 @@ run_packages() {
 
 run_claude() {
     header "Installing Claude Code"
-    local script="$SCRIPT_DIR/installers/claude-code.sh"
+    local script
+    for script in "$SCRIPT_DIR/installers/claude-code.sh" \
+                  "$SCRIPT_DIR/installers/claude-plugins.sh"; do
+        if [[ "$DRY_RUN" == "true" ]]; then
+            info "[DRY RUN] would run: $script"
+        else
+            bash "$script"
+        fi
+    done
+}
+
+run_skills() {
+    header "Installing agent skill packs"
+    local script="$SCRIPT_DIR/installers/agent-skills.sh"
     if [[ "$DRY_RUN" == "true" ]]; then
         info "[DRY RUN] would run: $script"
     else
@@ -223,6 +237,67 @@ run_doctor() {
     elif is_cmd ollama; then
         printf '    %b  ollama installed but daemon not responding on :11434%b\n' "$DIM" "$NC"
     fi
+    echo
+
+    echo -e "  ${BOLD}Claude plugins${NC}  ${DIM}(declared in claude/settings.json)${NC}"
+    if ! is_cmd claude || ! is_cmd jq; then
+        printf '    %b✗ needs claude and jq to report%b\n' "$DIM" "$NC"
+    else
+        local installed_plugins
+        installed_plugins="$(claude plugin list --json 2>/dev/null || echo '[]')"
+        local id
+        while IFS= read -r id; do
+            [[ -n "$id" ]] || continue
+            if jq -e --arg id "$id" 'any(.[]; .id == $id and .scope == "user")' \
+                <<<"$installed_plugins" >/dev/null; then
+                printf "    ${GREEN}✓${NC} %s\n" "$id"
+            else
+                printf "    ${RED}✗${NC} %s (not installed — run './bootstrap.sh claude')\n" "$id"
+            fi
+        done < <(jq -r '(.enabledPlugins // {}) | to_entries[] | select(.value != false) | .key' \
+            "$SCRIPT_DIR/claude/settings.json")
+    fi
+    echo
+
+    # Skill packs are agent-neutral (packages/agent-skills.txt); each agent
+    # gets them through its own mechanism, and two of them are per-project.
+    echo -e "  ${BOLD}Agent skills${NC}  ${DIM}(packages/agent-skills.txt)${NC}"
+    local cache_dir="${AGENT_SKILLS_CACHE:-$HOME/.cache/agent-skills}"
+    local repo
+    while IFS= read -r repo; do
+        repo="${repo%%#*}"
+        repo="$(echo "$repo" | tr -d '[:space:]')"
+        [[ -n "$repo" ]] || continue
+        printf "    ${CYAN}%s${NC}\n" "$repo"
+
+        local market=""
+        if is_cmd jq; then
+            market="$(jq -r --arg repo "$repo" '
+                (.extraKnownMarketplaces // {}) | to_entries[]
+                | select(.value.source.repo == $repo) | .key
+            ' "$SCRIPT_DIR/claude/settings.json" | head -1)"
+        fi
+        if [[ -n "$market" ]]; then
+            printf "      ${GREEN}✓${NC} %-12s declared (marketplace %s)\n" "Claude Code" "$market"
+        else
+            printf "      ${RED}✗${NC} %-12s not declared in claude/settings.json\n" "Claude Code"
+        fi
+
+        local agent
+        for agent in codex gemini; do
+            if is_cmd "$agent"; then
+                printf "      ${GREEN}✓${NC} %-12s installed — './bootstrap.sh skills' wires the pack in\n" "$agent"
+            else
+                printf "      ${DIM}· %-12s not installed${NC}\n" "$agent"
+            fi
+        done
+
+        if [[ -d "$cache_dir/${repo//\//__}/.git" ]]; then
+            printf "      ${GREEN}✓${NC} %-12s %s (agent-skills-sync)\n" "cache" "$cache_dir/${repo//\//__}"
+        else
+            printf "      ${RED}✗${NC} %-12s not cloned — run './bootstrap.sh skills'\n" "cache"
+        fi
+    done < "$SCRIPT_DIR/packages/agent-skills.txt"
     echo
 
     echo -e "  ${BOLD}Symlinks${NC}"
@@ -305,19 +380,19 @@ echo -e "  ${CYAN}OS${NC}    ${OS} ${CYAN}Arch${NC} ${ARCH}"
 RUN_LIST=()
 if [[ -n "$ONLY_STEP" ]]; then
     case "$ONLY_STEP" in
-        link|packages|claude|doctor) RUN_LIST=("$ONLY_STEP") ;;
+        link|packages|claude|skills|doctor) RUN_LIST=("$ONLY_STEP") ;;
         *)
-            error "--only expects link|packages|claude|doctor (got: $ONLY_STEP)"
+            error "--only expects link|packages|claude|skills|doctor (got: $ONLY_STEP)"
             exit 1
             ;;
     esac
 else
     case "$COMMAND" in
         all)                              RUN_LIST=("${STEPS[@]}") ;;
-        link|packages|claude|doctor)      RUN_LIST=("$COMMAND") ;;
+        link|packages|claude|skills|doctor) RUN_LIST=("$COMMAND") ;;
         codex|opencode|ollama|ros2|gazebo|isaac) RUN_LIST=("$COMMAND") ;;
         *)
-            error "Unknown command: $COMMAND (expected: link|packages|claude|doctor|all|codex|opencode|ollama|ros2|gazebo|isaac)"
+            error "Unknown command: $COMMAND (expected: link|packages|claude|skills|doctor|all|codex|opencode|ollama|ros2|gazebo|isaac)"
             exit 1
             ;;
     esac
@@ -330,6 +405,7 @@ for step in "${RUN_LIST[@]}"; do
         link)     run_link ;;
         packages) run_packages ;;
         claude)   run_claude ;;
+        skills)   run_skills ;;
         doctor)   run_doctor ;;
         codex)    run_optional codex ;;
         opencode) run_optional opencode ;;

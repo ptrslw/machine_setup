@@ -38,6 +38,7 @@ project `.envrc` + `direnv allow .`. Opt-in agents:
 | Python | [uv](https://docs.astral.sh/uv/) + [direnv](https://direnv.net/) | uv owns interpreter + venv; direnv activates per-project `.envrc` on `cd`. Avoids global `python3` / alias skew. |
 | Lint / types | [Ruff](https://docs.astral.sh/ruff/), [mypy](https://mypy-lang.org/) | Ruff for lint/format speed; mypy for static types. Invoked via `uv run` in projects. |
 | AI (primary) | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Strongest agent loop for my day-to-day work. Installed by `all`; wrapper `cc`. |
+| AI skills | [agent-skills](https://github.com/addyosmani/agent-skills) | Addy Osmani's pack of production-grade engineering workflows for coding agents: 24 lifecycle skills (spec-driven development, TDD, incremental implementation, code review, security hardening, performance, observability, shipping), 4 subagents (code reviewer, security auditor, test engineer, web performance auditor), and slash commands `/spec`, `/planning`, `/build`, `/test`, `/review`, `/webperf`, `/code-simplify`, `/ship`. Declared in `packages/agent-skills.txt` and installed by `all` into every agent present. See [docs/agents.md](docs/agents.md). |
 | AI (opt-in) | [Codex](https://github.com/openai/codex), [OpenCode](https://opencode.ai/), [Ollama](https://ollama.com/) | Secondary paths for DeepSeek / local models. Not in `all`. See [docs/agents.md](docs/agents.md). |
 | Robotics (opt-in) | ROS 2, Gazebo, Isaac Sim | Ubuntu / NVIDIA only. Never in `all`. See [docs/robotics.md](docs/robotics.md). |
 
@@ -70,6 +71,7 @@ Workflow detail: [docs/workflow.md](docs/workflow.md).
 | `get-versions` | Tool versions |
 | `get-docker` | Daemon + containers |
 | `get-process-info [N]` | Top RSS processes |
+| `agent-skills-sync [dest]` | Copy skill packs into this project (Cursor / OpenCode) |
 | `ros2-env [distro]` | Source ROS 2 (Linux) |
 
 ## Shell contract
@@ -80,7 +82,7 @@ Workflow detail: [docs/workflow.md](docs/workflow.md).
 | `.zshrc` / `.bashrc` | interactive | prompt, completion, direnv; sources `shell/common.sh` |
 | `shell/common.sh` | via rc | aliases, functions, secrets, `~/.shell.local` |
 | `shell/aliases.sh` | via common | aliases; `cc` / `cx` / `oc` |
-| `shell/functions.sh` | via common | → `functions.macos.sh` / `functions.linux.sh` |
+| `shell/functions.sh` | via common | → `functions.agents.sh`, `functions.{macos,linux}.sh` |
 
 | Item | Location | Forbidden in |
 |---|---|---|
@@ -105,14 +107,16 @@ Workflow detail: [docs/workflow.md](docs/workflow.md).
 
 ```
 machine_setup/
-├── bootstrap.sh              # link | packages | claude | doctor | all
+├── bootstrap.sh              # link | packages | claude | skills | doctor | all
 ├── lib/common.sh
-├── packages/                 # Brewfile, Brewfile.optional, apt.txt
-├── installers/               # uv, node, docker, wezterm, claude-code
+├── packages/                 # Brewfile, Brewfile.optional, apt.txt,
+│                             #   agent-skills.txt
+├── installers/               # uv, node, docker, wezterm, claude-code,
+│                             #   claude-plugins, agent-skills
 │   └── optional/             # codex, opencode, ollama, ros2, gazebo, isaac
 ├── home/                     # → $HOME
 ├── shell/
-├── claude/settings.json      # → ~/.claude/settings.json
+├── claude/settings.json      # → ~/.claude/settings.json (model + plugins)
 ├── AGENTS.md                 # → ~/.claude/CLAUDE.md
 └── docs/
 ```
@@ -131,5 +135,6 @@ machine_setup/
 ./bootstrap.sh doctor
 ```
 
-Read-only: OS/arch, tools, symlinks (incl. Claude settings), secrets mode,
-git identity.
+Read-only: OS/arch, tools, Claude plugins (`claude/settings.json`), skill
+packs per agent (`packages/agent-skills.txt`), symlinks (incl. Claude
+settings), secrets mode, git identity.

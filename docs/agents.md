@@ -49,6 +49,67 @@ Override per machine in untracked `~/.claude/settings.local.json` (for example
 a cheaper default model, or `skipDangerousModePermissionPrompt` if you
 accept that risk). The template deliberately does not ship skip-permissions.
 
+## Claude Code plugins
+
+`claude/settings.json` declares Claude Code's plugin set:
+`extraKnownMarketplaces` for the marketplaces, `enabledPlugins` for what loads
+in every session. `./bootstrap.sh claude` runs `installers/claude-plugins.sh`,
+which reads that file and performs the marketplace add/update plus the
+user-scope plugin install, so a new machine has them on disk before the first
+`claude` run. Re-running only updates.
+
+| Plugin | Marketplace | Source |
+|---|---|---|
+| `clangd-lsp` | `claude-plugins-official` | `anthropics/claude-plugins-official` |
+| `code-review` | `claude-plugins-official` | `anthropics/claude-plugins-official` |
+| `agent-skills` | `addy-agent-skills` | [`addyosmani/agent-skills`](https://github.com/addyosmani/agent-skills) |
+
+Add a plugin by adding it to `enabledPlugins` (plus `extraKnownMarketplaces`
+if it comes from a new marketplace), then `./bootstrap.sh claude`.
+
+## Skill packs (all agents)
+
+Skill packs are not Claude-specific, so the declaration of intent is not
+either: `packages/agent-skills.txt` lists the packs this machine wants, one
+`owner/repo` per line. `./bootstrap.sh skills` runs
+`installers/agent-skills.sh`, which translates that list into whatever each
+installed agent supports.
+
+| Agent | Mechanism | Scope |
+|---|---|---|
+| Claude Code | marketplace plugin, declared in `claude/settings.json` | user-global |
+| Codex (≥ 0.122) | `codex plugin marketplace add <repo>` | user-global |
+| Gemini CLI | `gemini skills install <url> --path skills` | user-global |
+| Cursor | `.cursor/skills/` | **per-project** |
+| OpenCode | project `AGENTS.md` + `skills/` | **per-project** |
+
+No directory is read by every agent, so "install globally" only exists for the
+first three; the installer skips any agent that is not present. Cursor and
+OpenCode read skills per project by design, so the installer instead keeps a
+clone at `~/.cache/agent-skills/<owner>__<repo>` and `agent-skills-sync`
+copies it into the project you are in:
+
+```sh
+agent-skills-sync              # → ./.cursor/skills   (Cursor)
+agent-skills-sync skills       # → ./skills           (OpenCode)
+agent-skills-sync --update     # git pull the cache first
+```
+
+The copy includes the pack's repo-level `references/`; skills that cite those
+checklists are incomplete without them. For an agent none of this covers,
+`npx skills add <owner>/<repo>` handles 70+ others.
+
+`./bootstrap.sh doctor` reports both layers: which declared Claude plugins are
+installed, and for each pack whether Claude has it declared, which other
+agents are present, and whether the clone exists.
+
+The one pack installed today, `addyosmani/agent-skills`, supplies 24 lifecycle
+skills (spec-driven development, TDD, incremental implementation, code review,
+security hardening, performance, observability, shipping), 4 subagents (code
+reviewer, security auditor, test engineer, web performance auditor), and slash
+commands `/spec`, `/planning`, `/build`, `/test`, `/review`, `/webperf`,
+`/code-simplify`, `/ship`.
+
 ## DeepSeek (remote)
 
 1. Put `DEEPSEEK_API_KEY` in `~/.secrets.env` (see `shell/secrets.env.example`).

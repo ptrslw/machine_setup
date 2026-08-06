@@ -1,0 +1,16 @@
+# packages/agent-skills.txt — skill packs this machine wants, agent-neutral.
+#
+# One GitHub repo (owner/name) per line. This file is the declaration of
+# intent; installers/agent-skills.sh translates it into whatever mechanism
+# each installed agent actually supports:
+#
+#   Claude Code   marketplace plugin        user-global  (claude/settings.json)
+#   Codex         codex plugin marketplace  user-global
+#   Gemini CLI    gemini skills install     user-global
+#   Cursor        .cursor/skills/           per-project  (agent-skills-sync)
+#   OpenCode      project AGENTS.md/skills  per-project  (agent-skills-sync)
+#
+# There is no directory every agent reads, so "install globally" is only
+# meaningful for the first three. See docs/agents.md.
+
+addyosmani/agent-skills
