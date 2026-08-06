@@ -201,7 +201,9 @@ live in one `main` session.
 |---|---|
 | `C-b [` | Copy / scroll mode (use `hjkl`, `C-u`/`C-d`, `q` to quit) |
 | `C-b ]` | Paste tmux buffer |
-| Mouse | Scroll, select, drag borders (mouse is on) |
+| Mouse | Scroll, select, drag borders (mouse is on). Selection syncs to the system clipboard via OSC 52 (`set-clipboard on` in `.tmux.conf`). |
+
+After a mouse selection (or a yank in copy mode), paste with the host terminal shortcut (`Cmd+V` on macOS).
 
 #### Meta
 
@@ -227,7 +229,7 @@ No custom leader or splits — multiplexing is tmux’s job. Useful **defaults**
 | `Cmd++` / `Cmd+-` | Font size up / down |
 | `Cmd+0` | Reset font size |
 | `Cmd+F` | Search scrollback |
-| `Cmd+C` / `Cmd+V` | Copy / paste (also works with terminal selection) |
+| `Cmd+C` / `Cmd+V` | Copy / paste (WezTerm defaults). Prefer mouse-select in tmux — that path syncs to the system clipboard via OSC 52. Hold **Option** while dragging to select in WezTerm instead of tmux. |
 | `Cmd+Enter` | Toggle fullscreen |
 
 If a chord you expect is “eaten”, check you are not fighting tmux — pane
