@@ -127,6 +127,15 @@ run_packages() {
                 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             fi
         fi
+        # Stable cask "wezterm" conflicts with "wezterm@nightly" (same app).
+        if brew list --cask wezterm@nightly &>/dev/null; then
+            if [[ "$DRY_RUN" == "true" ]]; then
+                info "[DRY RUN] would uninstall cask wezterm@nightly (conflicts with wezterm)"
+            else
+                info "Removing wezterm@nightly (conflicts with Brewfile cask wezterm)"
+                brew uninstall --cask wezterm@nightly
+            fi
+        fi
         if [[ "$DRY_RUN" == "true" ]]; then
             info "[DRY RUN] would run: brew bundle --file $SCRIPT_DIR/packages/Brewfile"
         else

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# installers/wezterm.sh — WezTerm on Ubuntu. On macOS the Brewfile cask handles it.
+# installers/wezterm.sh — WezTerm stable on Ubuntu. On macOS the Brewfile cask
+# handles it (bootstrap removes wezterm@nightly first if present).
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
@@ -20,8 +21,14 @@ require_ubuntu
 already_installed wezterm
 
 if [[ "${DRY_RUN:-false}" == "true" ]]; then
-    info "[DRY RUN] would install WezTerm from the WezTerm apt repository"
+    info "[DRY RUN] would install WezTerm (stable) from the WezTerm apt repository"
     exit 0
+fi
+
+# Stable and nightly .debs conflict — keep only stable.
+if dpkg -l wezterm-nightly 2>/dev/null | grep -q '^ii'; then
+    info "Removing wezterm-nightly (conflicts with stable wezterm)"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y wezterm-nightly
 fi
 
 curl -fsSL https://apt.fury.io/wez/gpg.key \

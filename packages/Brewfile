@@ -40,6 +40,8 @@ brew "docker-compose"
 cask "font-jetbrains-mono"
 
 # GUI apps (workflow core)
+# Stable WezTerm. Conflicts with cask wezterm@nightly — bootstrap removes
+# nightly before brew bundle if both would clash.
 cask "wezterm"
 cask "visual-studio-code"
 cask "cursor"
