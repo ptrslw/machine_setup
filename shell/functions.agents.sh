@@ -94,10 +94,30 @@ agent-skills-sync() {
             continue
         fi
 
-        mkdir -p "$_asy_dest"
-        cp -R "$_asy_src/skills/." "$_asy_dest/"
+        if [ ! -d "$_asy_src/skills" ]; then
+            echo "agent-skills-sync: $_asy_repo has no skills/ directory at pin $_asy_sha_lc" >&2
+            _asy_rc=1
+            continue
+        fi
+
+        if ! mkdir -p "$_asy_dest"; then
+            echo "agent-skills-sync: cannot create $_asy_dest" >&2
+            _asy_rc=1
+            continue
+        fi
+        if ! cp -R "$_asy_src/skills/." "$_asy_dest/"; then
+            echo "agent-skills-sync: failed to copy skills/ → $_asy_dest" >&2
+            _asy_rc=1
+            continue
+        fi
         # Repo-level checklists the skills reference; skills alone are incomplete.
-        [ -d "$_asy_src/references" ] && cp -R "$_asy_src/references" "$_asy_dest/references"
+        if [ -d "$_asy_src/references" ]; then
+            if ! cp -R "$_asy_src/references" "$_asy_dest/references"; then
+                echo "agent-skills-sync: failed to copy references/ → $_asy_dest/references" >&2
+                _asy_rc=1
+                continue
+            fi
+        fi
         echo "agent-skills-sync: $_asy_repo@$_asy_sha_lc -> $_asy_dest"
     done < "$_asy_manifest"
 
