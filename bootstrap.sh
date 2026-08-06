@@ -265,16 +265,25 @@ run_doctor() {
 
     # Skill packs are agent-neutral (packages/agent-skills.txt); each agent
     # gets them through its own mechanism, and two of them are per-project.
+    # Manifest lines are owner/repo@sha — the local cache must match the pin.
     echo -e "  ${BOLD}Agent skills${NC}  ${DIM}(packages/agent-skills.txt)${NC}"
     local cache_dir="${AGENT_SKILLS_CACHE:-$HOME/.cache/agent-skills}"
-    local repo
-    while IFS= read -r repo; do
-        repo="${repo%%#*}"
-        repo="$(echo "$repo" | tr -d '[:space:]')"
-        [[ -n "$repo" ]] || continue
-        printf "    ${CYAN}%s${NC}\n" "$repo"
+    local line repo sha dest head market agent rc
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        rc=0
+        agent_skill_parse_entry "$line" || rc=$?
+        if [[ "$rc" -eq 1 ]]; then
+            continue
+        elif [[ "$rc" -gt 1 ]]; then
+            printf "    ${RED}✗${NC} invalid manifest line: %s\n" "$line"
+            continue
+        fi
+        repo="$AGENT_SKILL_REPO"
+        sha="$AGENT_SKILL_SHA"
+        dest="$(agent_skill_cache_path "$repo" "$cache_dir")"
+        printf "    ${CYAN}%s@%s${NC}\n" "$repo" "$sha"
 
-        local market=""
+        market=""
         if is_cmd jq; then
             market="$(jq -r --arg repo "$repo" '
                 (.extraKnownMarketplaces // {}) | to_entries[]
@@ -287,7 +296,6 @@ run_doctor() {
             printf "      ${RED}✗${NC} %-12s not declared in claude/settings.json\n" "Claude Code"
         fi
 
-        local agent
         for agent in codex gemini; do
             if is_cmd "$agent"; then
                 printf "      ${GREEN}✓${NC} %-12s installed — './bootstrap.sh skills' wires the pack in\n" "$agent"
@@ -296,8 +304,14 @@ run_doctor() {
             fi
         done
 
-        if [[ -d "$cache_dir/${repo//\//__}/.git" ]]; then
-            printf "      ${GREEN}✓${NC} %-12s %s (agent-skills-sync)\n" "cache" "$cache_dir/${repo//\//__}"
+        if [[ -d "$dest/.git" ]]; then
+            head="$(git -C "$dest" rev-parse HEAD 2>/dev/null || true)"
+            if [[ "$head" == "$sha" ]]; then
+                printf "      ${GREEN}✓${NC} %-12s %s @ %s\n" "cache" "$dest" "${sha:0:12}"
+            else
+                printf "      ${RED}✗${NC} %-12s at %s, want %s — run './bootstrap.sh skills'\n" \
+                    "cache" "${head:-missing}" "${sha:0:12}"
+            fi
         else
             printf "      ${RED}✗${NC} %-12s not cloned — run './bootstrap.sh skills'\n" "cache"
         fi

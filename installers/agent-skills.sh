@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # installers/agent-skills.sh — install the skill packs declared in
 # packages/agent-skills.txt into every agent on this machine that supports a
-# user-global mechanism, and keep a local clone for the per-project ones.
+# user-global mechanism, and keep a local clone pinned to the declared SHA.
 #
-# One manifest, one adapter per agent:
+# Manifest lines are owner/repo@sha (full 40-char hex). One adapter per agent:
 #   Claude Code  declared in claude/settings.json; installed by
 #                installers/claude-plugins.sh. This script only verifies that
 #                the manifest and that file agree.
 #   Codex        codex plugin marketplace add <repo>      (if codex present)
 #   Gemini CLI   gemini skills install <url> --path skills (if gemini present)
-#   Cursor /     no user-global mechanism exists — the pack is cloned to
-#   OpenCode     ~/.cache/agent-skills/ and `agent-skills-sync` copies it into
-#                a project on demand (shell/functions.agents.sh).
+#   Cursor /     no user-global mechanism exists — the pack is cloned at the
+#   OpenCode     pinned SHA under ~/.cache/agent-skills/ and `agent-skills-sync`
+#                copies it into a project on demand (shell/functions.agents.sh).
 #
 # Invoked by `bootstrap.sh skills`. Requires git; jq for the Claude check.
 set -euo pipefail
@@ -64,6 +64,7 @@ check_claude() {
 }
 
 # Codex >= 0.122 reads the pack's root skills/ via its own plugin marketplace.
+# The CLI has no SHA pin; we still pass only owner/repo.
 install_codex() {
     local repo="$1"
     is_cmd codex || return 0
@@ -96,52 +97,35 @@ install_gemini() {
     fi
 }
 
-# Local clone that `agent-skills-sync` copies into per-project agents.
-cache_clone() {
-    local repo="$1"
-    local dest="$CACHE_DIR/${repo//\//__}"
-    if [[ "$DRY_RUN" == "true" ]]; then
-        info "[DRY RUN] would clone/update $repo in $dest"
-        return 0
-    fi
-    if ! is_cmd git; then
-        error "git not found — cannot cache $repo"
-        return 1
-    fi
-    if [[ -d "$dest/.git" ]]; then
-        if GIT_TERMINAL_PROMPT=0 git -C "$dest" pull --ff-only --quiet; then
-            success "cache updated: $dest"
-        else
-            warn "cache: 'git pull' failed in $dest"
-            return 1
-        fi
-    else
-        mkdir -p "$(dirname "$dest")"
-        # GIT_TERMINAL_PROMPT=0: never block provisioning on a credential prompt.
-        if GIT_TERMINAL_PROMPT=0 git clone --depth 1 --quiet "https://github.com/$repo.git" "$dest"; then
-            success "cache cloned: $dest"
-        else
-            error "cache: cannot clone https://github.com/$repo.git"
-            return 1
-        fi
-    fi
-}
-
 # A pack that fails does not stop the others; the exit status still reports it.
 packs=0
 failed=()
-while IFS= read -r repo; do
-    repo="${repo%%#*}"
-    repo="$(echo "$repo" | tr -d '[:space:]')"
-    [[ -n "$repo" ]] || continue
+parse_errors=0
+while IFS= read -r line || [[ -n "$line" ]]; do
+    rc=0
+    agent_skill_parse_entry "$line" || rc=$?
+    if [[ "$rc" -eq 1 ]]; then
+        continue # blank / comment
+    elif [[ "$rc" -gt 1 ]]; then
+        parse_errors=$((parse_errors + 1))
+        continue
+    fi
     packs=$((packs + 1))
+    repo="$AGENT_SKILL_REPO"
+    sha="$AGENT_SKILL_SHA"
+    dest="$(agent_skill_cache_path "$repo" "$CACHE_DIR")"
 
-    info "pack: $repo"
+    info "pack: $repo@$sha"
     check_claude "$repo"
     install_codex "$repo"
     install_gemini "$repo"
-    cache_clone "$repo" || failed+=("$repo")
+    agent_skill_ensure_cache "$dest" "$repo" "$sha" || failed+=("$repo@$sha")
 done < "$MANIFEST"
+
+if [[ "$parse_errors" -gt 0 ]]; then
+    error "Invalid entries in $MANIFEST"
+    exit 1
+fi
 
 if [[ "$packs" -eq 0 ]]; then
     warn "No packs declared in $MANIFEST"

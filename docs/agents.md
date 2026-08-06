@@ -71,28 +71,29 @@ if it comes from a new marketplace), then `./bootstrap.sh claude`.
 
 Skill packs are not Claude-specific, so the declaration of intent is not
 either: `packages/agent-skills.txt` lists the packs this machine wants, one
-`owner/repo` per line. `./bootstrap.sh skills` runs
-`installers/agent-skills.sh`, which translates that list into whatever each
-installed agent supports.
+`owner/repo@sha` per line (full 40-char hex). Skill packs steer agents that
+run shell and edit trees — bump the SHA only after reviewing the upstream
+diff. `./bootstrap.sh skills` runs `installers/agent-skills.sh`, which
+translates that list into whatever each installed agent supports.
 
-| Agent | Mechanism | Scope |
-|---|---|---|
-| Claude Code | marketplace plugin, declared in `claude/settings.json` | user-global |
-| Codex (≥ 0.122) | `codex plugin marketplace add <repo>` | user-global |
-| Gemini CLI | `gemini skills install <url> --path skills` | user-global |
-| Cursor | `.cursor/skills/` | **per-project** |
-| OpenCode | project `AGENTS.md` + `skills/` | **per-project** |
+| Agent | Mechanism | Scope | Pin |
+|---|---|---|---|
+| Claude Code | marketplace plugin, declared in `claude/settings.json` | user-global | marketplace floats until Claude grows pin support |
+| Codex (≥ 0.122) | `codex plugin marketplace add <repo>` | user-global | CLI has no pin |
+| Gemini CLI | `gemini skills install <url> --path skills` | user-global | CLI has no pin |
+| Cursor | `.cursor/skills/` | **per-project** | local cache @ SHA |
+| OpenCode | project `skills/` | **per-project** | local cache @ SHA |
 
 No directory is read by every agent, so "install globally" only exists for the
 first three; the installer skips any agent that is not present. Cursor and
 OpenCode read skills per project by design, so the installer instead keeps a
-clone at `~/.cache/agent-skills/<owner>__<repo>` and `agent-skills-sync`
-copies it into the project you are in:
+SHA-pinned clone at `~/.cache/agent-skills/<owner>__<repo>` and
+`agent-skills-sync` copies it into the project you are in:
 
 ```sh
 agent-skills-sync              # → ./.cursor/skills   (Cursor)
 agent-skills-sync skills       # → ./skills           (OpenCode)
-agent-skills-sync --update     # git pull the cache first
+agent-skills-sync --update     # re-fetch the pinned SHA (does not float on main)
 ```
 
 The copy includes the pack's repo-level `references/`; skills that cite those
@@ -101,7 +102,7 @@ checklists are incomplete without them. For an agent none of this covers,
 
 `./bootstrap.sh doctor` reports both layers: which declared Claude plugins are
 installed, and for each pack whether Claude has it declared, which other
-agents are present, and whether the clone exists.
+agents are present, and whether the cache is at the pinned SHA.
 
 The one pack installed today, `addyosmani/agent-skills`, supplies 24 lifecycle
 skills (spec-driven development, TDD, incremental implementation, code review,

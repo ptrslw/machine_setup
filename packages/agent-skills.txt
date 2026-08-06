@@ -1,16 +1,20 @@
 # packages/agent-skills.txt — skill packs this machine wants, agent-neutral.
 #
-# One GitHub repo (owner/name) per line. This file is the declaration of
-# intent; installers/agent-skills.sh translates it into whatever mechanism
-# each installed agent actually supports:
+# One pin per line: owner/repo@sha (full 40-char hex). Skill packs steer agents
+# that run shell and edit trees — never float on main. Bump the SHA deliberately
+# after reviewing the upstream diff.
+#
+# This file is the declaration of intent; installers/agent-skills.sh translates
+# it into whatever mechanism each installed agent actually supports:
 #
 #   Claude Code   marketplace plugin        user-global  (claude/settings.json)
-#   Codex         codex plugin marketplace  user-global
-#   Gemini CLI    gemini skills install     user-global
-#   Cursor        .cursor/skills/           per-project  (agent-skills-sync)
-#   OpenCode      project AGENTS.md/skills  per-project  (agent-skills-sync)
+#   Codex         codex plugin marketplace  user-global  (repo only; CLI has no pin)
+#   Gemini CLI    gemini skills install     user-global  (repo only; CLI has no pin)
+#   Cursor        .cursor/skills/           per-project  (agent-skills-sync @ SHA)
+#   OpenCode      project skills/           per-project  (agent-skills-sync @ SHA)
 #
-# There is no directory every agent reads, so "install globally" is only
-# meaningful for the first three. See docs/agents.md.
+# The local cache (~/.cache/agent-skills/) is always at the pinned SHA. Claude /
+# Codex / Gemini marketplace installs follow those tools' own resolution until
+# they grow pin support — see docs/agents.md.
 
-addyosmani/agent-skills
+addyosmani/agent-skills@f03b4a84b08b76608bbab3133e56e49e361f230b
