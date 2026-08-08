@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keybindings — WezTerm · tmux · Neovim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F7F8;
+    --card:#FFFFFF;
+    --ink:#1B1F24;
+    --muted:#697280;
+    --faint:#9AA2AD;
+    --line:#E4E7EB;
+
+    /* layer colors — semantic, reused everywhere */
+    --wez:#526577;   /* renderer  */
+    --tmux:#B4690E;  /* multiplex */
+    --nvim:#1C7A6A;  /* editor    */
+
+    --wez-t:#5265770F;
+    --tmux-t:#B4690E12;
+    --nvim-t:#1C7A6A12;
+
+    --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", "Menlo", monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.45;
+    padding:34px clamp(16px,4vw,48px) 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---------- masthead ---------- */
+  .masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:20px;}
+  h1{
+    font-size:clamp(20px,3vw,27px);
+    font-weight:700;
+    letter-spacing:-.02em;
+    margin:0;
+    line-height:1.05;
+  }
+  h1 .sub{display:block;font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:6px;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);}
+  .swatch{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .custom-key{display:inline-flex;align-items:center;gap:6px;color:var(--muted);}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ink);display:inline-block;}
+
+  /* ---------- hero: mental model ---------- */
+  .model{
+    display:grid;
+    grid-template-columns:minmax(260px,0.9fr) 1.1fr;
+    gap:18px;
+    margin-bottom:22px;
+  }
+  @media(max-width:720px){.model{grid-template-columns:1fr;}}
+
+  /* nested layer stack — the signature + the color key */
+  .stack{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+  }
+  .stack-head{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+  .box{border:1.5px solid;border-radius:8px;padding:10px 12px;position:relative;}
+  .box + .box{margin-top:0;}
+  .box-label{font-family:var(--mono);font-size:12px;font-weight:600;}
+  .box-trigger{font-family:var(--mono);font-size:11px;color:var(--muted);}
+  .box .box{margin-top:11px;}
+  .box.wez{border-color:var(--wez);background:var(--wez-t);}
+  .box.wez > .box-label{color:var(--wez);}
+  .box.tmux{border-color:var(--tmux);background:var(--tmux-t);}
+  .box.tmux > .box-label{color:var(--tmux);}
+  .box.nvim{border-color:var(--nvim);background:var(--nvim-t);}
+  .box.nvim > .box-label{color:var(--nvim);}
+  .box-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .box-note{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:6px;}
+
+  /* rules panel */
+  .rules{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .rules-head{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+  .rule{display:flex;gap:11px;align-items:baseline;padding:5px 0;border-top:1px solid var(--line);}
+  .rule:first-of-type{border-top:none;}
+  .rule .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:14px;}
+  .rule .txt{flex:1;font-size:13px;}
+  .rule strong{font-weight:600;}
+  .arrows{font-family:var(--mono);font-weight:500;}
+  .arrows b{color:var(--ink);font-weight:600;}
+
+  /* ---------- reference columns ---------- */
+  .cols{column-count:3;column-gap:18px;}
+  @media(max-width:980px){.cols{column-count:2;}}
+  @media(max-width:640px){.cols{column-count:1;}}
+
+  .block{
+    break-inside:avoid;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0;
+    margin:0 0 18px;
+    overflow:hidden;
+  }
+  .block-head{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 13px;
+    font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.01em;
+    border-left:3px solid;
+  }
+  .block-head .tool{font-size:10px;font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-left:auto;}
+  .block.wez .block-head{border-color:var(--wez);color:var(--wez);}
+  .block.tmux .block-head{border-color:var(--tmux);color:var(--tmux);}
+  .block.nvim .block-head{border-color:var(--nvim);color:var(--nvim);}
+
+  table{width:100%;border-collapse:collapse;}
+  td{padding:4px 13px;vertical-align:top;font-size:12.5px;border-top:1px solid var(--line);}
+  tr:first-child td{border-top:none;}
+  td.k{white-space:nowrap;width:1%;padding-right:12px;}
+  td.d{color:var(--ink);}
+  td.d .hint{color:var(--muted);}
+
+  kbd{
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:500;
+    background:#F1F3F5;
+    border:1px solid #DFE3E7;
+    border-bottom-width:1.5px;
+    border-radius:4px;
+    padding:1px 5px;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .seq{color:var(--faint);font-family:var(--mono);font-size:11px;padding:0 1px;}
+  .cust{position:relative;}
+  .cust .k{position:relative;}
+  .cust .k::after{
+    content:"";
+    position:absolute;
+    top:2px;right:5px;
+    width:5px;height:5px;border-radius:50%;
+    background:var(--ink);opacity:.55;
+  }
+  .block.wez .cust .k::after{background:var(--wez);opacity:1;}
+  .block.tmux .cust .k::after{background:var(--tmux);opacity:1;}
+  .block.nvim .cust .k::after{background:var(--nvim);opacity:1;}
+
+  .ns{display:flex;flex-wrap:wrap;gap:5px;padding:9px 13px;}
+  .ns span{font-family:var(--mono);font-size:11px;color:var(--muted);background:#F1F3F5;border:1px solid var(--line);border-radius:4px;padding:2px 7px;}
+  .ns span b{color:var(--ink);font-weight:600;}
+
+  footer{margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;}
+
+  /* ---------- print ---------- */
+  @media print{
+    @page{margin:12mm;}
+    body{background:#fff;padding:0;font-size:10.5px;}
+    .stack,.rules,.block{border-color:#ccc;box-shadow:none;}
+    kbd,.ns span{background:#f4f4f4 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .box,.block-head,.swatch,.dot,.cust .k::after{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .cols{column-count:3;}
+    footer{margin-top:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Terminal keybindings
+      <span class="sub">one grammar across the stack · hjkl = direction everywhere</span>
+    </h1>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--wez)"></i>WezTerm</span>
+      <span><i class="swatch" style="background:var(--tmux)"></i>tmux</span>
+      <span><i class="swatch" style="background:var(--nvim)"></i>Neovim</span>
+      <span class="custom-key"><i class="dot"></i>= custom binding</span>
+    </div>
+  </div>
+
+  <!-- ===== HERO: MENTAL MODEL ===== -->
+  <section class="model">
+
+    <div class="stack">
+      <div class="stack-head">The stack — who owns what</div>
+      <div class="box wez">
+        <div class="box-row"><span class="box-label">WezTerm</span><span class="box-trigger">no leader</span></div>
+        <div class="box-note">renderer only — never steal keys from below</div>
+        <div class="box tmux">
+          <div class="box-row"><span class="box-label">tmux</span><span class="box-trigger">prefix&nbsp;Ctrl+b</span></div>
+          <div class="box-note">sessions · windows · panes</div>
+          <div class="box nvim">
+            <div class="box-row"><span class="box-label">Neovim</span><span class="box-trigger">leader&nbsp;Space</span></div>
+            <div class="box-note">editing · splits via Ctrl+hjkl</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rules">
+      <div class="rules-head">Rules that make the rest predictable</div>
+      <div class="rule"><span class="n">1</span><span class="txt"><span class="arrows"><b>h</b>←&nbsp;&nbsp;<b>j</b>↓&nbsp;&nbsp;<b>k</b>↑&nbsp;&nbsp;<b>l</b>→</span> — same direction in tmux panes, Neovim windows, and motions.</span></div>
+      <div class="rule"><span class="n">2</span><span class="txt"><strong>lowercase acts, UPPERCASE resizes</strong> / stronger variant (tmux <kbd>h</kbd> focus vs <kbd>H</kbd> resize).</span></div>
+      <div class="rule"><span class="n">3</span><span class="txt">Splits: <kbd>|</kbd> vertical bar → <strong>side&#8209;by&#8209;side</strong>, <kbd>-</kbd> → <strong>stacked</strong>.</span></div>
+      <div class="rule"><span class="n">4</span><span class="txt">Move <strong>tmux</strong> panes → hit the <strong>prefix first</strong>. Inside Neovim, <kbd>C-h/j/k/l</kbd> moves an <em>editor</em> split, not a pane.</span></div>
+      <div class="rule"><span class="n">5</span><span class="txt">Keys feel broken in Neovim? You're in the wrong mode — hit <kbd>Esc</kbd>.</span></div>
+      <div class="rule"><span class="n">6</span><span class="txt">GUI IDEs (Cursor / VS Code / CLion) are exempt — use their own defaults.</span></div>
+    </div>
+
+  </section>
+
+  <!-- ===== REFERENCE ===== -->
+  <div class="cols">
+
+    <!-- tmux: panes -->
+    <div class="block tmux">
+      <div class="block-head">Panes (splits)<span class="tool">tmux · C-b first</span></div>
+      <table>
+        <tr class="cust"><td class="k"><kbd>C-b</kbd> <span class="seq">then</span> <kbd>|</kbd></td><td class="d">Split left / right</td></tr>
+        <tr class="cust"><td class="k"><kbd>C-b</kbd> <kbd>-</kbd></td><td class="d">Split up / down</td></tr>
+        <tr class="cust"><td class="k"><kbd>C-b</kbd> <kbd>h j k l</kbd></td><td class="d">Focus pane</td></tr>
+        <tr class="cust"><td class="k"><kbd>C-b</kbd> <kbd>H J K L</kbd></td><td class="d">Resize <span class="hint">(repeatable)</span></td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>z</kbd></td><td class="d">Zoom pane (toggle)</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>;</kbd></td><td class="d">Last pane</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>q</kbd></td><td class="d">Show numbers → type to jump</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>{</kbd> / <kbd>}</kbd></td><td class="d">Swap prev / next</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>SPC</kbd></td><td class="d">Cycle layouts</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>x</kbd></td><td class="d">Kill pane <span class="hint">(confirms)</span></td></tr>
+      </table>
+    </div>
+
+    <!-- tmux: windows + sessions -->
+    <div class="block tmux">
+      <div class="block-head">Windows &amp; sessions<span class="tool">tmux</span></div>
+      <table>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>c</kbd></td><td class="d">New window <span class="hint">(keeps cwd)</span></td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>,</kbd></td><td class="d">Rename window</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>n</kbd> / <kbd>p</kbd></td><td class="d">Next / prev window</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>1</kbd>…<kbd>9</kbd></td><td class="d">Jump to window N</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>w</kbd></td><td class="d">Window list</td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>d</kbd></td><td class="d">Detach <span class="hint">(prefer over exit)</span></td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>s</kbd></td><td class="d">Session picker</td></tr>
+        <tr><td class="k"><kbd>tmux attach -t main</kbd></td><td class="d">Re-attach from a shell</td></tr>
+      </table>
+    </div>
+
+    <!-- tmux: scroll + meta -->
+    <div class="block tmux">
+      <div class="block-head">Scroll &amp; meta<span class="tool">tmux</span></div>
+      <table>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>[</kbd></td><td class="d">Scroll / copy mode <span class="hint">(hjkl, q to quit)</span></td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>]</kbd></td><td class="d">Paste buffer</td></tr>
+        <tr class="cust"><td class="k"><kbd>C-b</kbd> <kbd>r</kbd></td><td class="d">Reload <span class="hint">~/.tmux.conf</span></td></tr>
+        <tr><td class="k"><kbd>C-b</kbd> <kbd>?</kbd></td><td class="d">List all bindings</td></tr>
+      </table>
+    </div>
+
+    <!-- nvim: modes -->
+    <div class="block nvim">
+      <div class="block-head">Modes<span class="tool">Neovim · modal</span></div>
+      <table>
+        <tr><td class="k"><kbd>i</kbd> <kbd>a</kbd> <kbd>o</kbd> <kbd>O</kbd></td><td class="d">Enter insert (type text)</td></tr>
+        <tr class="cust"><td class="k"><kbd>jk</kbd> <span class="seq">/</span> <kbd>Esc</kbd></td><td class="d">Back to normal</td></tr>
+        <tr><td class="k"><kbd>v</kbd> <kbd>V</kbd> <kbd>C-v</kbd></td><td class="d">Visual char / line / block</td></tr>
+        <tr><td class="k"><kbd>:</kbd></td><td class="d">Command-line <span class="hint">(:w :q …)</span></td></tr>
+      </table>
+    </div>
+
+    <!-- nvim: save/quit/files -->
+    <div class="block nvim">
+      <div class="block-head">Save · quit · files<span class="tool">Neovim</span></div>
+      <table>
+        <tr class="cust"><td class="k"><kbd>SPC w</kbd> <span class="seq">/</span> <kbd>:w</kbd></td><td class="d">Save</td></tr>
+        <tr class="cust"><td class="k"><kbd>SPC q</kbd> <span class="seq">/</span> <kbd>:q</kbd></td><td class="d">Quit <span class="hint">(fails if unsaved)</span></td></tr>
+        <tr><td class="k"><kbd>:q!</kbd></td><td class="d">Quit, discard changes</td></tr>
+        <tr><td class="k"><kbd>:wq</kbd> <span class="seq">/</span> <kbd>:x</kbd></td><td class="d">Save and quit</td></tr>
+        <tr><td class="k"><kbd>:e path</kbd></td><td class="d">Open file</td></tr>
+        <tr><td class="k"><kbd>:e!</kbd></td><td class="d">Reload from disk</td></tr>
+      </table>
+    </div>
+
+    <!-- nvim: edit -->
+    <div class="block nvim">
+      <div class="block-head">Edit · undo · clipboard<span class="tool">Neovim · normal</span></div>
+      <table>
+        <tr><td class="k"><kbd>u</kbd> <span class="seq">/</span> <kbd>C-r</kbd></td><td class="d">Undo / redo</td></tr>
+        <tr><td class="k"><kbd>d</kbd> + motion</td><td class="d">Delete <span class="hint">(also yanks)</span></td></tr>
+        <tr><td class="k"><kbd>c</kbd> + motion</td><td class="d">Change <span class="hint">(delete + insert)</span></td></tr>
+        <tr><td class="k"><kbd>y</kbd> + motion</td><td class="d">Yank (copy)</td></tr>
+        <tr><td class="k"><kbd>p</kbd> / <kbd>P</kbd></td><td class="d">Paste after / before</td></tr>
+        <tr><td class="k"><kbd>x</kbd></td><td class="d">Delete char</td></tr>
+        <tr><td class="k"><kbd>dd</kbd> / <kbd>yy</kbd></td><td class="d">Delete / yank line</td></tr>
+      </table>
+      <table style="border-top:1px solid var(--line)">
+        <tr><td class="d" style="color:var(--muted);font-size:11.5px;padding-top:7px;padding-bottom:8px"><span class="hint">Clipboard is <span style="font-family:var(--mono)">unnamedplus</span> — y/p talk to the OS pasteboard.</span></td></tr>
+      </table>
+    </div>
+
+    <!-- nvim: motion -->
+    <div class="block nvim">
+      <div class="block-head">Motion<span class="tool">Neovim · normal</span></div>
+      <table>
+        <tr><td class="k"><kbd>h j k l</kbd></td><td class="d">Left / down / up / right</td></tr>
+        <tr><td class="k"><kbd>w</kbd> / <kbd>b</kbd> / <kbd>e</kbd></td><td class="d">Next / prev / end of word</td></tr>
+        <tr><td class="k"><kbd>0</kbd> <kbd>^</kbd> <kbd>$</kbd></td><td class="d">Line start / first / end</td></tr>
+        <tr><td class="k"><kbd>gg</kbd> / <kbd>G</kbd></td><td class="d">Top / bottom of file</td></tr>
+        <tr><td class="k"><kbd>{n}G</kbd> <span class="seq">/</span> <kbd>:{n}</kbd></td><td class="d">Go to line n <span class="hint">(10j = down 10)</span></td></tr>
+        <tr><td class="k"><kbd>C-d</kbd> / <kbd>C-u</kbd></td><td class="d">Half-page down / up</td></tr>
+        <tr><td class="k"><kbd>C-f</kbd> / <kbd>C-b</kbd></td><td class="d">Page down / up</td></tr>
+        <tr><td class="k"><kbd>%</kbd></td><td class="d">Jump matching bracket</td></tr>
+        <tr><td class="k"><kbd>*</kbd> / <kbd>#</kbd></td><td class="d">Next / prev word under cursor</td></tr>
+      </table>
+    </div>
+
+    <!-- nvim: search/replace -->
+    <div class="block nvim">
+      <div class="block-head">Search &amp; replace<span class="tool">Neovim</span></div>
+      <table>
+        <tr><td class="k"><kbd>/pat</kbd> <span class="seq">/</span> <kbd>?pat</kbd></td><td class="d">Search fwd / back</td></tr>
+        <tr><td class="k"><kbd>n</kbd> / <kbd>N</kbd></td><td class="d">Next / prev match</td></tr>
+        <tr class="cust"><td class="k"><kbd>Esc</kbd></td><td class="d">Clear highlight <span class="hint">(:nohlsearch)</span></td></tr>
+        <tr><td class="k"><kbd>:s/old/new/</kbd></td><td class="d">Replace first on line</td></tr>
+        <tr><td class="k"><kbd>:s/old/new/g</kbd></td><td class="d">Replace all on line</td></tr>
+        <tr><td class="k"><kbd>:%s/old/new/g</kbd></td><td class="d">Replace all in file</td></tr>
+        <tr><td class="k"><kbd>:%s/old/new/gc</kbd></td><td class="d">…confirm each</td></tr>
+      </table>
+    </div>
+
+    <!-- nvim: windows/buffers -->
+    <div class="block nvim">
+      <div class="block-head">Windows &amp; buffers<span class="tool">Neovim</span></div>
+      <table>
+        <tr class="cust"><td class="k"><kbd>C-h j k l</kbd></td><td class="d">Focus split <span class="hint">(not tmux pane)</span></td></tr>
+        <tr><td class="k"><kbd>C-w v</kbd> / <kbd>C-w s</kbd></td><td class="d">Split vertical / horizontal</td></tr>
+        <tr><td class="k"><kbd>C-w c</kbd></td><td class="d">Close window</td></tr>
+        <tr><td class="k"><kbd>C-w o</kbd></td><td class="d">Close others</td></tr>
+        <tr><td class="k"><kbd>:bn</kbd> / <kbd>:bp</kbd></td><td class="d">Next / prev buffer</td></tr>
+        <tr><td class="k"><kbd>:bd</kbd></td><td class="d">Close buffer</td></tr>
+      </table>
+    </div>
+
+    <!-- wezterm -->
+    <div class="block wez">
+      <div class="block-head">Defaults — leave alone<span class="tool">WezTerm · macOS Cmd</span></div>
+      <table>
+        <tr><td class="k"><kbd>Cmd+N</kbd></td><td class="d">New window <span class="hint">(joins tmux main)</span></td></tr>
+        <tr><td class="k"><kbd>Cmd+F</kbd></td><td class="d">Search scrollback</td></tr>
+        <tr><td class="k"><kbd>Cmd++</kbd> <kbd>Cmd+-</kbd> <kbd>Cmd+0</kbd></td><td class="d">Font bigger / smaller / reset</td></tr>
+        <tr><td class="k"><kbd>Cmd+C</kbd> / <kbd>Cmd+V</kbd></td><td class="d">Copy / paste</td></tr>
+        <tr><td class="k"><kbd>Cmd+Enter</kbd></td><td class="d">Toggle fullscreen</td></tr>
+        <tr><td class="k"><kbd>Cmd+Q</kbd></td><td class="d">Quit WezTerm</td></tr>
+      </table>
+      <table style="border-top:1px solid var(--line)">
+        <tr><td class="d" style="color:var(--muted);font-size:11.5px;padding-top:7px;padding-bottom:8px"><span class="hint">No leader, no splits — splitting is tmux's job (<span style="font-family:var(--mono)">C-b | / C-b -</span>).</span></td></tr>
+      </table>
+    </div>
+
+    <!-- reserved namespaces -->
+    <div class="block nvim">
+      <div class="block-head">Reserved SPC namespaces<span class="tool">Neovim · future</span></div>
+      <div class="ns">
+        <span><b>SPC f</b> find</span>
+        <span><b>SPC b</b> buffers</span>
+        <span><b>SPC g</b> git</span>
+        <span><b>SPC c</b> code / LSP</span>
+        <span><b>SPC t</b> toggles</span>
+        <span><b>SPC s</b> search / session</span>
+        <span><b>SPC w</b> save ✓</span>
+        <span><b>SPC q</b> quit ✓</span>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Conflicts resolve downward: WezTerm yields → Neovim defers to tmux for multiplexing → Neovim keeps editing keys. New binding? Update the convention file in the same change.</footer>
+
+</div>
+</body>
+</html>
